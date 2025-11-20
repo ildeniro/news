@@ -13,16 +13,15 @@ include("template/topo.php");
 ===================================== -->
 
 <!-- Start Hero Area -->
-<div class="hero-area hero-style-two bg-cover bg-center" style="background-image: url('<?= PORTAL_URL; ?>assets/img/hero-news.jpg');">
+<div class="hero-area hero-style-two bg-cover bg-center" style="background-image: url('<?= PORTAL_URL; ?>assets/img/termos.png');">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-lg-8">
+            <div class="col-lg-12">
                 <div class="hero-content">
                     <?php
                     // Destaques: 3 notícias mais recentes publicadas
                     $stmt = $db->prepare("
-                        SELECT a.id, a.title, a.slug, a.excerpt, a.featured_image, a.published_at,
-                               c.name as category_name, c.slug as category_slug
+                        SELECT a.id, a.title, a.content, a.slug, a.excerpt, a.featured_image, a.published_at, c.name as category_name, c.slug as category_slug 
                         FROM articles a
                         JOIN categories c ON a.category_id = c.id
                         WHERE a.status = 'published'
@@ -35,7 +34,7 @@ include("template/topo.php");
 
                     <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
                         <div class="carousel-inner">
-                            <?php while ($art = $stmt->fetchAll(PDO::FETCH_ASSOC)): ?>
+                            <?php while ($art = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
                                 <div class="carousel-item <?= $primeiro ? 'active' : '' ?>">
                                     <span class="badge bg-primary mb-3"><?= htmlspecialchars($art['category_name']) ?></span>
                                     <h1 class="display-4 fw-bold text-white mb-3">
@@ -61,12 +60,6 @@ include("template/topo.php");
                             <span class="carousel-control-next-icon"></span>
                         </button>
                     </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <!-- Imagem lateral ou mini-destaques (opcional no futuro) -->
-                <div class="hero-image d-none d-lg-block">
-                    <img src="<?= PORTAL_URL; ?>assets/img/hero-news-side.png" alt="Notícias" class="img-fluid rounded shadow">
                 </div>
             </div>
         </div>
@@ -96,13 +89,15 @@ include("template/topo.php");
                 ORDER BY a.published_at DESC
                 LIMIT 12
             ");
+			
+			$stmt->execute();
 
             if ($stmt->rowCount() === 0): ?>
                 <div class="col-12 text-center py-5">
                     <p>Nenhuma notícia publicada ainda.</p>
                 </div>
             <?php else: ?>
-                <?php while ($art = $stmt->fetchAll(PDO::FETCH_ASSOC)): ?>
+                <?php while ($art = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
                     <div class="col-lg-4 col-md-6">
                         <div class="single-blog-card style-2 h-100">
                             <div class="blog-image">

@@ -18,11 +18,11 @@ $arquivomodulo = Url::getURL(2);
 $parametromodulo = Url::getURL(3);
 
 if ($modulo == 'index.php' || $modulo == 'index' || $modulo == '' || $modulo == null) {
-    $modulo = "home";
+    $modulo = "views/home";
     include_once $modulo . ".php";
     sessionOn();
     exit();
-} else {
+}  else {
     if ($arquivomodulo == 'index.php' || $arquivomodulo == 'index' || $arquivomodulo == '' || $arquivomodulo == null) {
         //VERIFICA SE O ARQUIVO EXISTE E EXIBI
         if (file_exists($modulo . '/' . $mvc . '/' . "index.php")) {
@@ -30,7 +30,7 @@ if ($modulo == 'index.php' || $modulo == 'index' || $modulo == '' || $modulo == 
             sessionOn();
             exit();
         } else {
-            include_once "404.php";
+            include_once "views/404.php";
             sessionOn();
             exit();
         }
@@ -42,7 +42,7 @@ if ($modulo == 'index.php' || $modulo == 'index' || $modulo == '' || $modulo == 
                 sessionOn();
                 exit();
             } else {
-                include_once "404.php";
+                include_once "views/404.php";
                 sessionOn();
                 exit();
             }
@@ -53,7 +53,7 @@ if ($modulo == 'index.php' || $modulo == 'index' || $modulo == '' || $modulo == 
                 sessionOn();
                 exit();
             } else {
-                include_once "404.php";
+                include_once "views/404.php";
                 sessionOn();
                 exit();
             }
