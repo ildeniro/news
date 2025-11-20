@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 // Fetch categorias dinâmicas (apenas pais, pra menu principal)
-$stmt = $mysqli->prepare("
+$stmt = $db->prepare("
     SELECT id, name, slug 
     FROM categories 
     WHERE parent_id IS NULL AND id > 0  -- Evita categoria dummy se tiver
@@ -12,8 +12,7 @@ $stmt = $mysqli->prepare("
     LIMIT 8
 ");
 $stmt->execute();
-$categorias = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-$stmt->close();
+$categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!-- Start Navbar Area -->

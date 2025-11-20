@@ -9,20 +9,6 @@ include_once("config/geral.php");
 include_once("config/session.php");
 include_once("config/funcoes.php");
 
-// Em index.php, após carregar DB/funções
-$url = $_GET['url'] ?? 'home';  // Default para home
-switch (explode('/', trim($url, '/'))[0]) {
-    case 'home':
-    case '':
-        require_once 'home.php';
-        break;
-    // Futuros: 'artigo/{slug}' => views/article.php, etc.
-    default:
-        http_response_code(404);
-        require_once '404.php';  // Crie um básico
-}
-
-
 //INSTANCIA A CONEXAO
 $db = Conexao::getInstance();
 

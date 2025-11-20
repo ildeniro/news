@@ -1,6 +1,7 @@
 <?php
 include("template/topo.php");
 ?>
+
 <!-- Start Preloader Area -->
 <?php include("template/preloader.php"); ?>
 <!-- End Preloader Area -->
@@ -19,7 +20,7 @@ include("template/topo.php");
                 <div class="hero-content">
                     <?php
                     // Destaques: 3 notícias mais recentes publicadas
-                    $stmt = $mysqli->prepare("
+                    $stmt = $db->prepare("
                         SELECT a.id, a.title, a.slug, a.excerpt, a.featured_image, a.published_at,
                                c.name as category_name, c.slug as category_slug
                         FROM articles a
@@ -29,13 +30,12 @@ include("template/topo.php");
                         LIMIT 3
                     ");
                     $stmt->execute();
-                    $destaques = $stmt->get_result();
                     $primeiro = true;
                     ?>
 
                     <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
                         <div class="carousel-inner">
-                            <?php while ($art = $destaques->fetch_assoc()): ?>
+                            <?php while ($art = $stmt->fetchAll(PDO::FETCH_ASSOC)): ?>
                                 <div class="carousel-item <?= $primeiro ? 'active' : '' ?>">
                                     <span class="badge bg-primary mb-3"><?= htmlspecialchars($art['category_name']) ?></span>
                                     <h1 class="display-4 fw-bold text-white mb-3">
@@ -85,7 +85,7 @@ include("template/topo.php");
         <div class="row justify-content-center">
             <?php
             // Notícias recentes (12 por página)
-            $stmt = $mysqli->prepare("
+            $stmt = $db->prepare("
                 SELECT a.id, a.title, a.slug, a.featured_image, a.published_at, a.views,
                        c.name as category_name, c.slug as category_slug,
                        u.username as author_name
@@ -96,15 +96,13 @@ include("template/topo.php");
                 ORDER BY a.published_at DESC
                 LIMIT 12
             ");
-            $stmt->execute();
-            $noticias = $stmt->get_result();
 
-            if ($noticias->num_rows === 0): ?>
+            if ($stmt->rowCount() === 0): ?>
                 <div class="col-12 text-center py-5">
                     <p>Nenhuma notícia publicada ainda.</p>
                 </div>
             <?php else: ?>
-                <?php while ($art = $noticias->fetch_assoc()): ?>
+                <?php while ($art = $stmt->fetchAll(PDO::FETCH_ASSOC)): ?>
                     <div class="col-lg-4 col-md-6">
                         <div class="single-blog-card style-2 h-100">
                             <div class="blog-image">
