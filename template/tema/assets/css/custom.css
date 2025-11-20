@@ -1,0 +1,163 @@
+/* custom.css */
+
+/* Substituir cor primária (#0000C0) */
+:root {
+    --bs-primary: #0000C0;
+    --bs-primary-rgb: 0, 0, 192;
+}
+
+.text-primary {
+    color: #0000C0 !important;
+}
+
+.bg-primary {
+    background-color: #0000C0 !important;
+}
+
+.btn-primary {
+    background-color: #0000C0 !important;
+    border-color: #0000C0 !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #000099 !important; /* Tom mais escuro para hover/focus */
+    border-color: #000099 !important;
+}
+
+.bg-primary-div {
+    background-color: #0000C0 !important;
+}
+
+/* Botão Cadastrar */
+.btn-primary-div-cadastrar {
+    background-color: #2103fb !important; /* Laranja vibrante */
+    border-color: #332ff4 !important;
+    color: #FFFFFF !important; /* Texto branco */
+}
+
+.btn-primary-div-cadastrar:hover,
+.btn-primary-div-cadastrar:focus {
+    background-color: #6f5cff !important; /* Laranja mais claro no hover */
+    color: #FFFFFF !important; /* Texto branco no hover */
+    border-color: #6f5cff !important;
+}
+
+/* Botão Inscreva-se Agora */
+.btn-primary-div-inscreva {
+    background-color: #F17012 !important; /* Laranja vibrante */
+    border-color: #F17012 !important;
+    color: #FFFFFF !important; /* Texto branco */
+}
+
+.btn-primary-div-inscreva:hover,
+.btn-primary-div-inscreva:focus {
+    background-color: #F7944D !important; /* Laranja mais escuro para hover */
+    border-color: #F7944D !important;
+    color: #FFFFFF !important;
+}
+
+/* Substituir cor secundária (#F17012) */
+.text-primary-div {
+    color: #F17012 !important;
+}
+
+.bg-primary-div.bg-opacity-25 {
+    background-color: rgba(241, 112, 18, 0.25) !important; /* Laranja com opacidade */
+}
+
+/* Botão Entrar (cor mais fraca: #F7944D) */
+.btn-outline-primary-div-entrar {
+    background-color: #F17012 !important; /* Laranja vibrante */
+    border-color: #F17012 !important;
+    color: #FFFFFF !important; /* Texto branco */
+}
+
+.btn-outline-primary-div-entrar:hover,
+.btn-outline-primary-div-entrar:focus {
+    background-color: #F7944D !important; /* Laranja mais claro no hover */
+    color: #FFFFFF !important; /* Texto branco no hover */
+    border-color: #F7944D !important;
+}
+
+/* Ajustar ícones dentro dos botões */
+.btn-outline-primary-div i,
+.btn-primary-div i {
+    color: inherit !important; /* Herdar a cor do texto do botão */
+}
+
+/* Ajustar outros elementos que usam cores específicas */
+.material-symbols-outlined.text-primary {
+    color: #0000C0 !important;
+}
+
+.material-symbols-outlined.text-primary-div {
+    color: #F17012 !important;
+}
+
+.footer-single-item a.text-primary,
+.team-content a.text-primary {
+    color: #0000C0 !important;
+}
+
+/* Estrelas nos depoimentos */
+.testimonials-area .reating i {
+    color: #F17012 !important; /* Laranja vibrante para estrelas */
+}
+
+/* Botão Back to Top */
+#backtotop {
+    background-color: #0000C0 !important; /* Cor primária */
+    border-color: #0000C0 !important;
+    color: #FFFFFF !important; /* Texto/ícone branco para contraste */
+}
+
+#backtotop:hover,
+#backtotop:focus {
+    background-color: #000099 !important; /* Azul mais escuro para hover */
+    border-color: #000099 !important;
+    color: #FFFFFF !important;
+}
+
+#backtotop i {
+    color: #FFFFFF !important; /* Ícone branco */
+}
+
+/* Ajuste do logo no menu e rodapé */
+.navbar-brand img, .footer-logo img {
+    width: 140px; /* Ajustado para melhor proporção */
+    height: auto;
+}
+
+/* Estilo do menu ativo e hover */
+.nav-link {
+    color: white !important; /* Branco vibrante para destaque */
+}
+
+/* Estilo do menu ativo e hover */
+.nav-link:hover {
+    color: #F17012 !important; /* Laranja vibrante para destaque */
+    font-size: 18px !important;
+}
+
+.banner-area{
+    background-image: url(../../../../template/tema/assets/images/landing/foto10.png);
+    height: 600px;
+    background-position: center !important;
+
+}
+
+.navbar.sticky {
+    background-color: #000000 !important;
+}
+
+.bg-white{
+    --bs-bg-opacity: 1;
+    background-color: rgb(0 0 0 / 50%) !important;
+}
+
+.team-controller .controller-icon:hover
+{
+    background-color: #2103fb !important;
+    color: #fff;
+}

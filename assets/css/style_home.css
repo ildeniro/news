@@ -1,0 +1,66 @@
+select{
+    height: 49px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 44px !important;
+}
+
+.swal2-icon .placeholder
+{
+    background-color: white !important;
+}
+
+.modal-title {
+    color: white;
+}
+.events-area {
+    background: #f8f9fa;
+}
+.event-card {
+    border: none;
+    background: #fff;
+}
+.event-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+.event-card .card-img-top {
+    transition: opacity 0.3s ease;
+}
+.event-card:hover .card-img-top {
+    opacity: 0.85;
+}
+.badge {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 10px;
+}
+.btn-outline-primary {
+    border-color: #0000C0;
+    color: #0000C0;
+    border-width: 2px;
+}
+.btn-outline-primary:hover {
+    background-color: #0000C0;
+    color: #fff;
+    border-color: #0000C0;
+}
+.modal-header {
+    border-bottom: none;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+.modal-body {
+    padding: 2rem;
+}
+@media (max-width: 768px) {
+    .event-card .card-body {
+        padding: 1.5rem;
+    }
+    .event-card .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
