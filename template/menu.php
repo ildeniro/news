@@ -62,11 +62,6 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link fs-16 fw-medium text-body hover px-0 px-md-2 mx-1 mx-xl-0 px-xl-4" href="<?= PORTAL_URL; ?>#ourteam">
-                        <i class="ri-team-line me-1"></i>Nossa Equipe
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link fs-16 fw-medium text-body hover px-0 px-md-2 mx-1 mx-xl-0 px-xl-4" href="<?= PORTAL_URL; ?>#contact">
                         <i class="ri-mail-send-line me-1"></i>Contato
                     </a>

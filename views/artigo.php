@@ -1,14 +1,15 @@
 <?php
-// views/artigo.php - Artigo único com comentários
-defined('INDEX_LOADED') or die('Acesso negado!');  // Anti-hotlink
+// views/artigo.php - Artigo único com layout jornalístico profissional
+defined('INDEX_LOADED') or die('Acesso negado!');
 
-// Sanitize slug (segurança: só alfanum + hífen)
-$slug = preg_replace('/[^a-z0-9-]+/', '', explode('/', $_GET['url'])[1] ?? '');
+// Sanitização segura do slug
+$slug = preg_replace('/[^a-z0-9-]/', '', explode('/', $_GET['url'])[1] ?? '');
 if (empty($slug)) {
-    header('Location: ' . PORTAL_URL); exit;
+    header('Location: ' . PORTAL_URL);
+    exit;
 }
 
-// Fetch artigo + joins (prepared pra slug)
+// Busca o artigo com prepared statement (segurança total)
 $stmt = $mysqli->prepare("
     SELECT a.*, c.name as category_name, c.slug as category_slug, u.username as author_name
     FROM articles a
@@ -25,33 +26,44 @@ $stmt->close();
 
 if (!$artigo) {
     http_response_code(404);
-    echo '<div class="container my-5"><h2>Artigo não encontrado.</h2><a href="' . PORTAL_URL . '">Voltar à Home</a></div>';
-    include("template/footer.php"); include("template/rodape.php"); exit;
+    include("template/topo.php");
+    include("template/preloader.php");
+    include("template/menu.php");
+    echo '<div class="container py-5 text-center"><h1 class="display-4">404</h1><p class="lead">Artigo não encontrado.</p><a href="' . PORTAL_URL . '" class="btn btn-primary">Voltar à Home</a></div>';
+    include("template/footer.php");
+    include("template/rodape.php");
+    exit;
 }
 
-// Incrementa views (uma vez por IP/session, anti-abuso)
-$view_key = 'viewed_' . $artigo['id'];
+// Incrementa visualizações (1 vez por sessão)
+$view_key = 'viewed_article_' . $artigo['id'];
 if (!isset($_SESSION[$view_key])) {
     $_SESSION[$view_key] = true;
-    $update_stmt = $mysqli->prepare("UPDATE articles SET views = views + 1 WHERE id = ?");
-    $update_stmt->bind_param('i', $artigo['id']);
-    $update_stmt->execute();
-    $update_stmt->close();
+    $upd = $mysqli->prepare("UPDATE articles SET views = views + 1 WHERE id = ?");
+    $upd->bind_param('i', $artigo['id']);
+    $upd->execute();
+    $upd->close();
 }
 
-// Fetch comentários aprovados
-$comm_stmt = $mysqli->prepare("SELECT com.*, u.username FROM comments com LEFT JOIN users u ON com.user_id = u.id WHERE com.article_id = ? AND com.approved = 1 ORDER BY com.created_at DESC");
+// Comentários aprovados
+$comm_stmt = $mysqli->prepare("
+    SELECT c.*, u.username 
+    FROM comments c 
+    LEFT JOIN users u ON c.user_id = u.id 
+    WHERE c.article_id = ? AND c.approved = 1 
+    ORDER BY c.created_at DESC
+");
 $comm_stmt->bind_param('i', $artigo['id']);
 $comm_stmt->execute();
 $comentarios = $comm_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $comm_stmt->close();
 
-// Fetch related: 3 da mesma categoria
+// Notícias relacionadas (mesma categoria, exceto o atual)
 $rel_stmt = $mysqli->prepare("
-    SELECT id, title, slug, featured_image
+    SELECT id, title, slug, featured_image, published_at 
     FROM articles 
-    WHERE category_id = ? AND id != ? AND status = 'published'
-    ORDER BY RAND() LIMIT 3
+    WHERE category_id = ? AND id != ? AND status = 'published' 
+    ORDER BY published_at DESC LIMIT 5
 ");
 $rel_stmt->bind_param('ii', $artigo['category_id'], $artigo['id']);
 $rel_stmt->execute();
@@ -63,133 +75,195 @@ $rel_stmt->close();
 <?php include("template/preloader.php"); ?>
 <?php include("template/menu.php"); ?>
 
-<!-- Start Article Area -->
-<div class="blog-area ptb-100">
+<!-- ============================================= -->
+<!-- HERO DO ARTIGO (estilo VEJA + CNN Brasil)    -->
+<!-- ============================================= -->
+<div class="article-hero position-relative text-white" style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url('<?= $artigo['featured_image'] ? PORTAL_URL . htmlspecialchars($artigo['featured_image']) : PORTAL_URL . 'assets/img/default-hero.jpg' ?>') center/cover no-repeat; min-height: 70vh; display: flex; align-items: end;">
+    <div class="container pb-5">
+        <div class="row">
+            <div class="col-lg-10">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb bg-transparent text-white-50">
+                        <li class="breadcrumb-item"><a href="<?= PORTAL_URL ?>" class="text-white-50">Home</a></li>
+                        <li class="breadcrumb-item"><a href="<?= PORTAL_URL ?>categoria/<?= $artigo['category_slug'] ?>" class="text-white-50"><?= htmlspecialchars($artigo['category_name']) ?></a></li>
+                        <li class="breadcrumb-item active text-white" aria-current="page">Artigo</li>
+                    </ol>
+                </nav>
+                <span class="badge bg-danger fs-6 mb-3 px-4 py-2">EXCLUSIVO</span>
+                <h1 class="display-3 fw-bold mb-4 text-shadow"><?= htmlspecialchars($artigo['title']) ?></h1>
+                <div class="d-flex flex-wrap align-items-center gap-4 text-white-50 fs-5">
+                    <div><i class="ri-user-line"></i> Por <strong><?= htmlspecialchars($artigo['author_name']) ?></strong></div>
+                    <div><i class="ri-calendar-line"></i> <?= date('d \d\e F \d\e Y', strtotime($artigo['published_at'])) ?></div>
+                    <div><i class="ri-eye-line"></i> <?= number_format($artigo['views'] + 1) ?> visualizações</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================= -->
+<!-- CONTEÚDO PRINCIPAL + SIDEBAR                -->
+<!-- ============================================= -->
+<div class="blog-area ptb-100 bg-light">
     <div class="container">
-        <article class="single-blog style-2">
-            <!-- Breadcrumb (SEO como Veja) -->
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb bg-transparent">
-                    <li class="breadcrumb-item"><a href="<?= PORTAL_URL; ?>">Home</a></li>
-                    <li class="breadcrumb-item"><a href="<?= PORTAL_URL; ?>categoria/<?= htmlspecialchars($artigo['category_slug']) ?>"><?= htmlspecialchars($artigo['category_name']) ?></a></li>
-                    <li class="breadcrumb-item active"><?= htmlspecialchars($artigo['title']) ?></li>
-                </ol>
-            </nav>
-
-            <div class="row">
-                <div class="col-lg-8">
-                    <div class="blog-details">
-                        <?php if ($artigo['featured_image']): ?>
-                            <img src="<?= PORTAL_URL . htmlspecialchars($artigo['featured_image']) ?>" alt="<?= htmlspecialchars($artigo['title']) ?>" class="img-fluid mb-4 rounded">
-                        <?php endif; ?>
-
-                        <ul class="meta list-unstyled d-flex flex-wrap mb-3">
-                            <li class="me-3"><i class="ri-folder-line me-1"></i><?= htmlspecialchars($artigo['category_name']) ?></li>
-                            <li class="me-3"><i class="ri-calendar-line me-1"></i><?= date('d/m/Y', strtotime($artigo['published_at'])) ?></li>
-                            <li><i class="ri-eye-line me-1"></i><?= number_format($artigo['views']) ?> visualizações</li>
-                        </ul>
-
-                        <h1 class="mb-4 fw-bold"><?= htmlspecialchars($artigo['title']) ?></h1>
-                        <div class="author-info d-flex align-items-center mb-4">
-                            <img src="<?= PORTAL_URL; ?>assets/img/avatar-default.jpg" alt="Autor" class="rounded-circle me-3" width="50" height="50">  <!-- Placeholder -->
+        <div class="row">
+            <!-- Artigo Principal -->
+            <div class="col-lg-8">
+                <article class="single-blog style-2 bg-white shadow-sm rounded-3 overflow-hidden">
+                    <div class="p-5">
+                        <!-- Autor com foto -->
+                        <div class="author-box d-flex align-items-center mb-5 p-4 bg-light rounded">
+                            <img src="<?= PORTAL_URL ?>assets/img/avatar-default.jpg" alt="Autor" class="rounded-circle me-4" width="80" height="80">
                             <div>
-                                <h6>Por <?= htmlspecialchars($artigo['author_name']) ?></h6>
-                                <small>Editor(a) | <?= date('d/m/Y H:i', strtotime($artigo['published_at'])) ?></small>
+                                <h5 class="mb-1"><?= htmlspecialchars($artigo['author_name']) ?></h5>
+                                <small class="text-muted">Redator(a) | Publicado em <?= date('d/m/Y \à\s H\hi', strtotime($artigo['published_at'])) ?></small>
                             </div>
                         </div>
 
-                        <div class="content">
-                            <?= nl2br(htmlspecialchars_decode($artigo['content'])) ?>  <!-- Preserva HTML se rich text futuro -->
+                        <!-- Conteúdo do artigo -->
+                        <div class="article-content lead fs-4 lh-lg text-dark">
+                            <?= $artigo['content'] // Já permite HTML (use TinyMCE no admin) ?>
                         </div>
 
-                        <!-- Compartilhamentos (criativo: WhatsApp pra BR) -->
-                        <div class="share-buttons mt-4 d-flex gap-2">
-                            <a href="https://wa.me/?text=<?= urlencode($artigo['title'] . ' ' . PORTAL_URL . 'artigo/' . $slug) ?>" class="btn btn-success" target="_blank"><i class="ri-whatsapp-line"></i> WhatsApp</a>
-                            <a href="https://twitter.com/intent/tweet?url=<?= urlencode(PORTAL_URL . 'artigo/' . $slug) ?>&text=<?= urlencode($artigo['title']) ?>" class="btn btn-info" target="_blank"><i class="ri-twitter-line"></i> Twitter</a>
-                            <a href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode(PORTAL_URL . 'artigo/' . $slug) ?>" class="btn btn-primary" target="_blank"><i class="ri-facebook-line"></i> Facebook</a>
+                        <!-- Tags (se implementar no futuro) -->
+                        <div class="tags mt-5">
+                            <span class="fw-bold me-2">Tags:</span>
+                            <a href="#" class="badge bg-secondary text-white me-2">Política</a>
+                            <a href="#" class="badge bg-secondary text-white me-2">Brasil</a>
+                        </div>
+
+                        <!-- Compartilhamento -->
+                        <div class="share-section mt-5 p-4 bg-light rounded d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">Compartilhe:</span>
+                            <div class="d-flex gap-3">
+                                <a href="https://wa.me/?text=<?= urlencode($artigo['title'] . ' - ' . PORTAL_URL . 'artigo/' . $slug) ?>" target="_blank" class="btn btn-success btn-lg rounded-circle"><i class="ri-whatsapp-line fs-4"></i></a>
+                                <a href="https://twitter.com/intent/tweet?url=<?= urlencode(PORTAL_URL . 'artigo/' . $slug) ?>&text=<?= urlencode($artigo['title']) ?>" target="_blank" class="btn btn-info btn-lg rounded-circle text-white"><i class="ri-twitter-line fs-4"></i></a>
+                                <a href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode(PORTAL_URL . 'artigo/' . $slug) ?>" target="_blank" class="btn btn-primary btn-lg rounded-circle"><i class="ri-facebook-fill fs-4"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- ============================================= -->
+                <!-- SEÇÃO DE COMENTÁRIOS                        -->
+                <!-- ============================================= -->
+                <section class="comments-section mt-5 bg-white p-5 rounded-3 shadow-sm">
+                    <h3 class="mb-4 border-bottom pb-3"><i class="ri-message-3-line"></i> Comentários (<?= count($comentarios) ?>)</h3>
+
+                    <?php if (!empty($comentarios)): ?>
+                        <?php foreach ($comentarios as $com): ?>
+                            <div class="comment-item d-flex mb-4 pb-4 border-bottom">
+                                <img src="<?= PORTAL_URL ?>assets/img/avatar-default.jpg" alt="Usuário" class="rounded-circle me-3 flex-shrink-0" width="50" height="50">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-0"><?= htmlspecialchars($com['username'] ?? 'Anônimo') ?></h6>
+                                        <small class="text-muted"><?= date('d/m/Y \à\s H\hi', strtotime($com['created_at'])) ?></small>
+                                    </div>
+                                    <p class="mt-2 mb-0"><?= nl2br(htmlspecialchars($com['content'])) ?></p>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="text-muted fst-italic">Seja o primeiro a comentar esta notícia!</p>
+                    <?php endif; ?>
+
+                    <!-- Formulário de Comentário -->
+                    <?php if (isset($_SESSION['id'])): ?>
+                        <div class="comment-form mt-5 p-4 bg-light rounded">
+                            <h5>Deixe seu comentário</h5>
+                            <form id="commentForm" action="<?= PORTAL_URL ?>ajax/comentario.php" method="POST">
+                                <input type="hidden" name="article_id" value="<?= $artigo['id'] ?>">
+                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ??= bin2hex(random_bytes(32)) ?>">
+                                <div class="mb-3">
+                                    <textarea name="content" class="form-control" rows="5" placeholder="Escreva seu comentário..." required maxlength="1000"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-danger">Enviar Comentário</button>
+                            </form>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-info mt-4">
+                            <i class="ri-login-box-line"></i> <a href="<?= PORTAL_URL ?>admin/login" class="alert-link">Faça login</a> para comentar.
+                        </div>
+                    <?php endif; ?>
+                </section>
+            </div>
+
+            <!-- ============================================= -->
+            <!-- SIDEBAR - NOTÍCIAS RELACIONADAS             -->
+            <!-- ============================================= -->
+            <div class="col-lg-4">
+                <div class="sidebar-sticky" style="top: 100px;">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0"><i class="ri-fire-line"></i> Notícias Relacionadas</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <?php foreach ($related as $rel): ?>
+                                <a href="<?= PORTAL_URL ?>artigo/<?= $rel['slug'] ?>" class="d-block p-3 border-bottom hover-bg-light text-decoration-none">
+                                    <div class="d-flex">
+                                        <?php if ($rel['featured_image']): ?>
+                                            <img src="<?= PORTAL_URL . htmlspecialchars($rel['featured_image']) ?>" alt="" class="me-3 rounded" width="90" height="70" loading="lazy">
+                                        <?php endif; ?>
+                                        <div>
+                                            <h6 class="mb-1 text-dark"><?= htmlspecialchars($rel['title']) ?></h6>
+                                            <small class="text-muted"><i class="ri-time-line"></i> <?= date('d/m/Y', strtotime($rel['published_at'])) ?></small>
+                                        </div>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
                         </div>
                     </div>
 
-                    <!-- Comentários -->
-                    <section class="comments-area mt-5">
-                        <h3 class="mb-4">Comentários (<?= count($comentarios) ?>)</h3>
-                        <?php if (!empty($comentarios)): ?>
-                            <?php foreach ($comentarios as $com): ?>
-                                <div class="comment-item mb-4 p-3 border rounded">
-                                    <div class="d-flex">
-                                        <img src="<?= PORTAL_URL; ?>assets/img/avatar-default.jpg" alt="Usuário" class="rounded-circle me-3" width="40" height="40">
-                                        <div class="flex-grow-1">
-                                            <h6><?= htmlspecialchars($com['username'] ?? 'Anônimo') ?></h6>
-                                            <small class="text-muted"><?= date('d/m/Y H:i', strtotime($com['created_at'])) ?></small>
-                                            <p class="mt-2"><?= nl2br(htmlspecialchars($com['content'])) ?></p>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <p class="text-muted">Seja o primeiro a comentar!</p>
-                        <?php endif; ?>
-
-                        <!-- Form de Comentário (com CSRF simples) -->
-                        <?php if (isset($_SESSION['id'])):  // Só logados comentam ?>
-                            <div class="comment-form mt-5">
-                                <h5>Deixe seu comentário</h5>
-                                <form method="POST" action="<?= PORTAL_URL; ?>ajax/comentario.php" id="commentForm">
-                                    <input type="hidden" name="article_id" value="<?= $artigo['id'] ?>">
-                                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? bin2hex(random_bytes(32)) ?>">  <!-- Anti-CSRF -->
-                                    <textarea name="content" class="form-control mb-3" rows="4" placeholder="O que achou da notícia?" required maxlength="1000"></textarea>
-                                    <button type="submit" class="btn btn-primary">Enviar Comentário</button>
-                                </form>
-                            </div>
-                        <?php else: ?>
-                            <p class="mt-3"><a href="<?= PORTAL_URL; ?>admin/login">Faça login</a> para comentar.</p>
-                        <?php endif; ?>
-                    </section>
-                </div>
-
-                <div class="col-lg-4">
-                    <!-- Sidebar: Related Articles -->
-                    <div class="sidebar-widget">
-                        <h4 class="widget-title mb-3">Notícias Relacionadas</h4>
-                        <?php if (!empty($related)): ?>
-                            <?php foreach ($related as $rel): ?>
-                                <div class="related-item mb-3 d-flex">
-                                    <?php if ($rel['featured_image']): ?>
-                                        <img src="<?= PORTAL_URL . htmlspecialchars($rel['featured_image']) ?>" alt="" class="me-3 rounded" width="80" height="60">
-                                    <?php endif; ?>
-                                    <div>
-                                        <h6><a href="<?= PORTAL_URL; ?>artigo/<?= htmlspecialchars($rel['slug']) ?>"><?= htmlspecialchars($rel['title']) ?></a></h6>
-                                        <small><?= date('d/m/Y', strtotime($artigo['published_at'])) ?></small>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                    <!-- Banner lateral (futuro) -->
+                    <div class="card bg-dark text-white text-center p-4">
+                        <h5>Anuncie Aqui</h5>
+                        <p>Entre em contato para publicidade</p>
                     </div>
                 </div>
             </div>
-        </article>
+        </div>
     </div>
 </div>
-<!-- End Article Area -->
+
+<!-- Estilos específicos do artigo -->
+<style>
+.article-hero { background-attachment: fixed; }
+.text-shadow { text-shadow: 3px 3px 10px rgba(0,0,0,0.8); }
+.article-content img { max-width: 100%; border-radius: 12px; margin: 20px 0; }
+.comment-item:hover { background: #f8f9fa; }
+.sidebar-sticky { position: sticky; top: 100px; }
+.hover-bg-light:hover { background: #f8f9fa !important; transition: 0.3s; }
+@media (max-width: 992px) {
+    .article-hero { min-height: 50vh; background-attachment: scroll; }
+    .display-3 { font-size: 2.5rem; }
+}
+</style>
 
 <?php include("template/footer.php"); ?>
 <?php include("template/rodape.php"); ?>
 
+<!-- AJAX para comentários -->
 <script>
-// AJAX pra comentário (sem reload, SweetAlert feedback)
 document.getElementById('commentForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
     const formData = new FormData(this);
-    fetch(this.action, { method: 'POST', body: formData })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                Swal.fire('Sucesso!', 'Comentário enviado para aprovação.', 'success');
-                this.reset();
-                location.reload();  // Refresh pra mostrar
-            } else {
-                Swal.fire('Erro!', data.message, 'error');
-            }
-        });
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire('Sucesso!', 'Seu comentário foi enviado e está aguardando aprovação.', 'success');
+            this.reset();
+        } else {
+            Swal.fire('Erro', data.message || 'Falha ao enviar comentário.', 'error');
+        }
+    })
+    .catch(() => {
+        Swal.fire('Erro', 'Falha na conexão. Tente novamente.', 'error');
+    });
 });
 </script>
